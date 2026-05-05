@@ -1,0 +1,108 @@
+{
+  "name": "nadir",
+  "seed": 7064,
+  "levels": {
+    "level_1": {
+      "tasks": [
+        {
+          "id": "1.4",
+          "title": "Изменить цвет фона",
+          "description": "Сделай фон светло-голубым вместо белого",
+          "hint": "Ищи строку: screen.bgcolor(",
+          "code_pattern": "screen.bgcolor\\(\\s*[\\\"']lightblue[\\\"']",
+          "points": 5
+        },
+        {
+          "id": "1.1",
+          "title": "Изменить цвет героя",
+          "description": "Поменяй цвет кружка с красного на синий",
+          "hint": "Ищи строку: hero.color(",
+          "code_pattern": "hero.color\\(\\s*[\\\"']blue[\\\"']",
+          "points": 5
+        },
+        {
+          "id": "1.2",
+          "title": "Изменить форму героя",
+          "description": "Замени круг на треугольник или квадрат",
+          "hint": "Ищи строку: hero.shape(",
+          "code_pattern": "hero.shape\\(\\s*[\\\"']triangle[\\\"']",
+          "points": 5
+        }
+      ],
+      "completed": [
+        false,
+        false,
+        false
+      ],
+      "max_points": 15
+    },
+    "level_2": {
+      "tasks": [
+        {
+          "id": "2.2",
+          "title": "Изменить размер игрового поля",
+          "description": "Увеличь поле с 1200x800 до 1400x900 пикселей",
+          "hint": "Ищи: WIDTH, HEIGHT = 1200, 800",
+          "code_pattern": "WIDTH\\s*=\\s*1400",
+          "points": 10
+        },
+        {
+          "id": "2.4",
+          "title": "Добавить счётчик жизней",
+          "description": "Отображай жизни на экране (начни с 3)",
+          "hint": "Добавь переменную lives и отображай в draw_all()",
+          "code_pattern": "lives\\s*=",
+          "points": 10
+        },
+        {
+          "id": "2.3",
+          "title": "Изменить количество препятствий",
+          "description": "Увеличь с 8 до 12 статичных препятствий",
+          "hint": "Ищи: for i in range(8)",
+          "code_pattern": "range\\(\\s*12\\s*\\)",
+          "points": 10
+        }
+      ],
+      "completed": [
+        false,
+        false,
+        false
+      ],
+      "max_points": 30
+    },
+    "level_3": {
+      "tasks": [
+        {
+          "id": "3.4",
+          "title": "Звуковые эффекты",
+          "description": "Добавь звук при достижении точки B",
+          "hint": "import winsound или pygame.mixer",
+          "code_pattern": "winsound|pygame.mixer|Beep",
+          "points": 15
+        },
+        {
+          "id": "3.5",
+          "title": "Топ-3 рекордов",
+          "description": "Сохраняй и отображай лучшие 3 результата",
+          "hint": "Читай/пиши файл leaderboard.json",
+          "code_pattern": "leaderboard|top.*3",
+          "points": 15
+        },
+        {
+          "id": "3.1",
+          "title": "Ускорение героя",
+          "description": "Добавь ускорение: при зажатии Shift скорость x2",
+          "hint": "Создай переменную boost и проверяй клавишу Shift",
+          "code_pattern": "onkey.*shift|Shift",
+          "points": 15
+        }
+      ],
+      "completed": [
+        false,
+        false,
+        false
+      ],
+      "max_points": 45
+    }
+  }
+}
