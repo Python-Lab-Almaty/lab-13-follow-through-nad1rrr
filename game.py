@@ -14,6 +14,82 @@ WIDTH, HEIGHT = 1400, 900
 log = []
 
 # ----------------------------
+# 🔊 [3.4] ЗВУКОВЫЕ ЭФФЕКТЫ
+# ----------------------------
+def play_sound(sound_type):
+    """
+    sound_type: 'goal' | 'penalty' | 'life_lost' | 'complete'
+    Работает на Windows (winsound). На других ОС — системный бип.
+    """
+    try:
+        import winsound
+        if sound_type == 'goal':
+            winsound.Beep(880, 300)
+            winsound.Beep(1100, 200)
+        elif sound_type == 'penalty':
+            winsound.Beep(220, 400)
+        elif sound_type == 'life_lost':
+            winsound.Beep(200, 600)
+        elif sound_type == 'complete':
+            for freq in [523, 659, 784, 1047]:
+                winsound.Beep(freq, 150)
+    except (ImportError, RuntimeError):
+        print('\a', end='', flush=True)  # фоллбэк — системный бип
+
+# ----------------------------
+# 🏆 [3.5] ТОП-3 РЕКОРДОВ
+# ----------------------------
+LEADERBOARD_FILE = "leaderboard.json"
+
+def load_leaderboard():
+    """Читает leaderboard.json, возвращает список записей."""
+    if os.path.exists(LEADERBOARD_FILE):
+        try:
+            with open(LEADERBOARD_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            return []
+    return []
+
+def save_leaderboard(records):
+    """Сохраняет список записей в leaderboard.json."""
+    with open(LEADERBOARD_FILE, 'w', encoding='utf-8') as f:
+        json.dump(records, f, indent=2, ensure_ascii=False)
+
+def update_leaderboard(name, score, elapsed_time, steps_count):
+    """Добавляет результат, сортирует по убыванию score, оставляет топ-3."""
+    records = load_leaderboard()
+    records.append({
+        "name": name,
+        "score": score,
+        "time": round(elapsed_time, 2),
+        "steps": steps_count,
+        "date": time.strftime("%Y-%m-%d %H:%M:%S")
+    })
+    records.sort(key=lambda r: r["score"], reverse=True)
+    records = records[:3]
+    save_leaderboard(records)
+    return records
+
+def show_leaderboard_screen():
+    """Отображает топ-3 на экране turtle после завершения игры."""
+    records = load_leaderboard()
+    lb = turtle.Turtle()
+    lb.hideturtle()
+    lb.penup()
+    lb.goto(0, 120)
+    lb.color("darkblue")
+    lb.write("🏆  TOP-3 LEADERBOARD  🏆", align="center", font=("Arial", 20, "bold"))
+    medals = ["🥇", "🥈", "🥉"]
+    for i, rec in enumerate(records):
+        lb.goto(0, 70 - i * 50)
+        lb.write(
+            f"{medals[i]}  {rec['name']}  —  Score: {rec['score']}  |  Time: {rec['time']}s  |  Steps: {rec['steps']}",
+            align="center", font=("Arial", 15, "normal")
+        )
+    screen.update()
+
+# ----------------------------
 # 🟢 ПОЛУЧЕНИЕ ИМЕНИ СТУДЕНТА
 # ----------------------------
 def get_student_name():
@@ -141,13 +217,30 @@ dynamic_obstacles = []
 # ----------------------------
 steps = 0
 penalties = 0
-lives = 3  # ❤️ Жизни
+lives = 3
 
 # ----------------------------
-# 🟢 СКОРОСТЬ
+# 🚀 [3.1] УСКОРЕНИЕ ГЕРОЯ (SHIFT)
 # ----------------------------
-vx = 3
-vy = 3
+BASE_SPEED = 3
+BOOST_SPEED = 6  # x2 при зажатом Shift
+
+vx = BASE_SPEED
+vy = BASE_SPEED
+
+boost_active = False  # True когда Shift зажат
+
+def shift_press():
+    global boost_active, vx, vy
+    boost_active = True
+    vx = BOOST_SPEED
+    vy = BOOST_SPEED
+
+def shift_release():
+    global boost_active, vx, vy
+    boost_active = False
+    vx = BASE_SPEED
+    vy = BASE_SPEED
 
 # ----------------------------
 # 🟢 РЕЖИМ
@@ -198,7 +291,6 @@ def spawn_dynamic_obstacle():
     dynamic_obstacles.append([x, y, size[0], size[1], True, fall_speed, final_y])
 
 def draw_all():
-    """Рисует ВСЁ: статичные препятствия, динамические, героя, счёт"""
     if hasattr(draw_all, 'dynamic_drawers'):
         for drawer in draw_all.dynamic_drawers:
             drawer.clear()
@@ -254,8 +346,11 @@ def draw_all():
     score_drawer = draw_all.score_drawer
     score_drawer.goto(0, -HEIGHT//2 + 40)
     score = steps - penalties
+
+    # 🚀 [3.1] Показываем BOOST-индикатор в строке счёта
+    boost_label = "  ⚡ BOOST!" if boost_active else ""
     score_drawer.write(
-        f"Lives: {lives}  |  Steps: {steps}  |  Penalties: {penalties}  |  Score: {score}",
+        f"Lives: {lives}  |  Steps: {steps}  |  Penalties: {penalties}  |  Score: {score}{boost_label}",
         align="center", font=("Arial", 16, "bold")
     )
 
@@ -278,6 +373,7 @@ def check_collision():
         if rect_collision(hero.xcor(), hero.ycor(), ox, oy, w, h, hero_radius=15):
             penalties += 10
             print(f"⚠️ ШТРАФ! (-10 баллов)")
+            play_sound('penalty')  # 🔊 [3.4] звук штрафа
             hero.goto(hero.xcor() - vx*3, hero.ycor() - vy*3)
             return "penalty"
 
@@ -330,6 +426,12 @@ screen.onkey(left, "a")
 screen.onkey(right, "d")
 screen.onkey(reset_session, "r")
 
+# 🚀 [3.1] Привязка клавиш Shift
+screen.onkeypress(shift_press, "Shift_L")
+screen.onkeypress(shift_press, "Shift_R")
+screen.onkeyrelease(shift_release, "Shift_L")
+screen.onkeyrelease(shift_release, "Shift_R")
+
 # ----------------------------
 # 🟢 ОСНОВНОЙ ЦИКЛ
 # ----------------------------
@@ -348,12 +450,12 @@ print(f"🎯 Goal: {goal}")
 print(f"⚠️ Препятствий: {len(impassable_obstacles)}")
 print(f"\n🎯 Цель: A → B → A")
 print(f"⌨️ Управление: стрелки или WASD")
+print(f"🚀 Ускорение: зажми Shift (скорость x2)")
 print(f"🔄 Сброс: R")
 print(f"\n🔴 КРАСНЫЕ = штраф -10")
 print(f"🟢 ЗЕЛЁНЫЕ = потеря жизни (появляются на обратном пути)")
 
 while True:
-    # 🟢 ФАЗА 2: На обратном пути
     if not going_forward:
         spawn_chance = 0.02 + (vx + vy) / 60
         if random.random() < spawn_chance and len(dynamic_obstacles) < 15:
@@ -367,14 +469,13 @@ while True:
                 else:
                     obs[4] = False
 
-    # Проверка достижения цели B
     if going_forward and abs(hero.xcor() - goal[0]) < 40 and abs(hero.ycor() - goal[1]) < 40:
         print("🎯 Reached B! RETURN TO A!")
         print(f"🟢 Теперь будут появляться препятствия!")
         going_forward = False
+        play_sound('goal')  # 🔊 [3.4] звук при достижении точки B
         log.append({"event": "reached_goal_B", "x": hero.xcor(), "y": hero.ycor(), "time": time.time()})
 
-    # Проверка возвращения в A
     if not going_forward and abs(hero.xcor() - start[0]) < 40 and abs(hero.ycor() - start[1]) < 40:
         total_time = time.time() - start_time
         final_score = steps - penalties
@@ -385,19 +486,35 @@ while True:
         print(f"📊 Final Score: {final_score}")
         print(f"🟩 Препятствий появилось: {obstacles_spawned_count}")
 
+        play_sound('complete')  # 🔊 [3.4] звук победы
+
         log.append({"event": "mission_complete", "x": hero.xcor(), "y": hero.ycor(), "time": time.time(), "score": final_score})
 
         with open(f"mission_records_{student_name}.json", 'w', encoding='utf-8') as f:
             json.dump({'score': final_score, 'time': total_time, 'steps': steps, 'date': time.strftime("%Y-%m-%d %H:%M:%S")}, f, indent=2)
 
         save_log("mission_complete")
+
+        # 🏆 [3.5] Обновляем leaderboard и печатаем в консоль
+        top3 = update_leaderboard(student_name, final_score, total_time, steps)
+        print("\n🏆 TOP-3 LEADERBOARD:")
+        medals = ["🥇", "🥈", "🥉"]
+        for i, rec in enumerate(top3):
+            print(f"  {medals[i]} {rec['name']} — Score: {rec['score']}, Time: {rec['time']}s, Steps: {rec['steps']}")
+
+        # 🏆 [3.5] Очищаем экран и показываем топ-3 в окне turtle
+        screen.clearscreen()
+        screen.setup(WIDTH, HEIGHT)
+        screen.bgcolor("white")
+        screen.tracer(0)
+        show_leaderboard_screen()
         break
 
-    # 🟢 СТОЛКНОВЕНИЕ — с жизнями
     collision = check_collision()
     if collision == "game_over":
         lives -= 1
         print(f"💥 Потеряна жизнь! Осталось: {lives}")
+        play_sound('life_lost')  # 🔊 [3.4] звук потери жизни
         hero.goto(start)
 
         log.append({"event": "life_lost", "lives_remaining": lives, "x": hero.xcor(), "y": hero.ycor(), "time": time.time()})
